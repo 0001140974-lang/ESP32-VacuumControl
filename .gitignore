@@ -1,0 +1,37 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+build/
+
+# Arduino
+*.ino.hex
+*.bin
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Dependencies
+node_modules/
+lib/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
