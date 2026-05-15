@@ -22,7 +22,8 @@ bool PressureSensor::isConnected() {
     return Wire.endTransmission() == 0;
 }
 
-uint16_t PressureSensor::readRaw() {
+// ✅ CORRIGIDO: Retorna uint32_t ao invés de uint16_t
+uint32_t PressureSensor::readRaw() {
     Wire.beginTransmission(_addr);
     Wire.write(0xFE);  // Comando de leitura do XGZP6847D
     Wire.endTransmission(false);
@@ -30,20 +31,27 @@ uint16_t PressureSensor::readRaw() {
     // Aguarda conversão
     delay(5);
     
-    // Lê 2 bytes de dados
-    Wire.requestFrom(_addr, (uint8_t)2);
+    // ✅ CORRIGIDO: Lendo 3 bytes (24 bits) ao invés de 2 bytes
+    Wire.requestFrom(_addr, (uint8_t)3);
     
-    uint16_t raw = 0;
-    if (Wire.available() >= 2) {
-        uint8_t msb = Wire.read();
-        uint8_t lsb = Wire.read();
-        raw = (msb << 8) | lsb;
+    // ✅ CORRIGIDO: uint32_t para armazenar 24 bits
+    uint32_t raw = 0;
+    
+    // ✅ CORRIGIDO: Verifica se 3 bytes estão disponíveis
+    if (Wire.available() >= 3) {
+        uint8_t msb = Wire.read();       // Byte mais significativo
+        uint8_t mid = Wire.read();       // Byte do meio
+        uint8_t lsb = Wire.read();       // Byte menos significativo
+        
+        // ✅ CORRIGIDO: Combinação correta dos 3 bytes para 24 bits
+        raw = ((uint32_t)msb << 16) | ((uint32_t)mid << 8) | lsb;
     }
     
     return raw;
 }
 
-float PressureSensor::convertRawToPressure(uint16_t raw) {
+// ✅ CORRIGIDO: Parâmetro muda de uint16_t para uint32_t
+float PressureSensor::convertRawToPressure(uint32_t raw) {
     // XGZP6847D Datasheet V3.0:
     // Output: 21 bits efetivos (em 24 bits = 0-2097152)
     // Faixa padrão: -100 a 1000 kPa (para modelo GPN)
@@ -70,7 +78,8 @@ float PressureSensor::convertRawToPressure(uint16_t raw) {
 }
 
 float PressureSensor::readPressure() {
-    uint16_t raw = readRaw();
+    // ✅ CORRIGIDO: uint32_t ao invés de uint16_t
+    uint32_t raw = readRaw();
     _lastPressure = convertRawToPressure(raw);
     
     if (DEBUG_SERIAL) {
