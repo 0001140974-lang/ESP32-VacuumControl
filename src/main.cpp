@@ -29,6 +29,14 @@ unsigned long lastSensorRead = 0;
 unsigned long lastStatusPrint = 0;
 unsigned long lastApiSend = 0;
 
+// ✅ CORRIGIDO: Forward declarations das funções
+// Isso permite usar as funções antes de defini-las
+void conectarWiFi();
+void enviarParaAPI();
+void printStatus();
+void processCommand(String cmd);
+void printHelp();
+
 // ======================================================================
 // WIFI
 // ======================================================================
@@ -63,33 +71,74 @@ void enviarParaAPI() {
   HTTPClient http;
   http.begin(API_URL);
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(3000); // 3 segundos de timeout
+  http.setTimeout(5000); // ✅ 5 segundos ao invés de 3
 
-  // Monta JSON com os dados atuais do controlador
+  // ✅ Concatenação adequada de strings
   String json = "{";
   json += "\"cicloId\":1,";
-  json += "\"estadoMaquina\":\"" + vacuumController.getStateMessage() + "\",";
-  json += "\"pressaoCamaraMbar\":"  + String(vacuumController.getCurrentPressure(), 2) + ",";
-  json += "\"pressaoTubo1Mbar\":"   + String(vacuumController.getCurrentPressure() * 0.6f, 2) + ",";
-  json += "\"fluxoTubo1LPM\":"      + String(vacuumController.getCurrentPressure() / 200.0f, 2) + ",";
-  json += "\"pressaoTubo2Mbar\":"   + String(vacuumController.getCurrentPressure() * 0.5f, 2) + ",";
-  json += "\"fluxoTubo2LPM\":"      + String(vacuumController.getCurrentPressure() / 220.0f, 2) + ",";
-  json += "\"pressaoTubo3Mbar\":"   + String(vacuumController.getCurrentPressure() * 0.55f, 2) + ",";
-  json += "\"fluxoTubo3LPM\":"      + String(vacuumController.getCurrentPressure() / 210.0f, 2) + ",";
-  json += "\"bombaLigada\":"        + String(vacuumController.isPumpOn() ? "true" : "false") + ",";
-  json += "\"valvulaAberta\":"      + String(vacuumController.getServoPosition() > 0 ? "true" : "false") + ",";
-  json += "\"servoAngulo\":"        + String((int)(vacuumController.getServoPosition() * 90));
+  
+  // ✅ Separar concatenações
+  json += "\"estadoMaquina\":\"";
+  json += vacuumController.getStateMessage();
+  json += "\",";
+  
+  json += "\"pressaoCamaraMbar\":";
+  json += String(vacuumController.getCurrentPressure(), 2);
+  json += ",";
+  
+  json += "\"pressaoTubo1Mbar\":";
+  json += String(vacuumController.getCurrentPressure() * 0.6f, 2);
+  json += ",";
+  
+  json += "\"fluxoTubo1LPM\":";
+  json += String(vacuumController.getCurrentPressure() / 200.0f, 2);
+  json += ",";
+  
+  json += "\"pressaoTubo2Mbar\":";
+  json += String(vacuumController.getCurrentPressure() * 0.5f, 2);
+  json += ",";
+  
+  json += "\"fluxoTubo2LPM\":";
+  json += String(vacuumController.getCurrentPressure() / 220.0f, 2);
+  json += ",";
+  
+  json += "\"pressaoTubo3Mbar\":";
+  json += String(vacuumController.getCurrentPressure() * 0.55f, 2);
+  json += ",";
+  
+  json += "\"fluxoTubo3LPM\":";
+  json += String(vacuumController.getCurrentPressure() / 210.0f, 2);
+  json += ",";
+  
+  json += "\"bombaLigada\":";
+  json += (vacuumController.isPumpOn() ? "true" : "false");
+  json += ",";
+  
+  json += "\"valvulaAberta\":";
+  json += (vacuumController.getServoPosition() > 0 ? "true" : "false");
+  json += ",";
+  
+  json += "\"servoAngulo\":";
+  json += String((int)(vacuumController.getServoPosition() * 90));
   json += "}";
+
+  // Debug: mostra JSON a enviar
+  if (DEBUG_SERIAL) {
+    Serial.println("[HTTP] JSON a enviar:");
+    Serial.println(json);
+  }
 
   int httpCode = http.POST(json);
 
-  if (DEBUG_SERIAL) {
-    Serial.print("[HTTP] POST → código: ");
+  // ✅ Validação completa de resposta HTTP
+  if (httpCode == 200) {
+    Serial.println("[HTTP] ✓ Dados enviados com sucesso!");
+  } else if (httpCode < 0) {
+    Serial.print("[HTTP] ✗ Erro: ");
+    Serial.println(http.errorToString(httpCode));
+  } else {
+    Serial.print("[HTTP] Status HTTP: ");
     Serial.println(httpCode);
-    if (httpCode < 0) {
-      Serial.print("[HTTP] Erro: ");
-      Serial.println(http.errorToString(httpCode));
-    }
   }
 
   http.end();
@@ -104,7 +153,7 @@ void setup() {
 
   Serial.println("\n========================================");
   Serial.println("ESP32 VACUUM CONTROL SYSTEM");
-  Serial.println("2-Stage Vacuum Control + API");
+  Serial.println("2-Stage Vacuum Control + API WiFi");
   Serial.println("========================================\n");
 
   // Conecta WiFi primeiro
@@ -155,8 +204,9 @@ void loop() {
     lastApiSend = millis();
   }
 
-  // Imprime status no Serial a cada 2 segundos
-  if ((millis() - lastStatusPrint) >= 2000) {
+  // ✅ CORRIGIDO: Agora usa 1000ms (1 segundo) ao invés de 2000ms
+  // Imprime status no Serial a cada 1 segundo
+  if ((millis() - lastStatusPrint) >= 1000) {
     printStatus();
     lastStatusPrint = millis();
   }
