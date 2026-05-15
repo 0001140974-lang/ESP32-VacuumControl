@@ -30,8 +30,9 @@ private:
     float _lastPressure;
     
     // Converte valor digital para pressão em mbar
-    // Sensor retorna 0-4095 para -100 a 1000 kPa
-    float convertRawToPressure(uint16_t raw);
+    // Sensor retorna 24 bits para -100 a 1000 kPa
+    // ✅ CORRIGIDO: uint32_t ao invés de uint16_t
+    float convertRawToPressure(uint32_t raw);
 };
 
 #endif // PRESSURE_SENSOR_H
