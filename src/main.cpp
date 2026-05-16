@@ -14,9 +14,9 @@
 #include "VacuumController.h"
 
 // ===== CONFIGURAÇÃO WIFI + API =====
-const char* WIFI_SSID = "NOME_DA_SUA_REDE";
-const char* WIFI_PASS = "SENHA_DA_SUA_REDE";
-const char* API_URL   = "https://pj9njgnt-5000.brs.devtunnels.ms/api/leiturasSensores";
+const char* WIFI_SSID = "sua_rede_aqui";
+const char* WIFI_PASS = "sua_senha_aqui";
+const char* API_URL   = "https://kg6l3t40-5000.brs.devtunnels.ms/api/leiturasSensores";
 
 // Instâncias globais dos componentes
 PressureSensor pressureSensor;
@@ -123,10 +123,10 @@ void enviarParaAPI() {
   json += "}";
 
   // Debug: mostra JSON a enviar
-  if (DEBUG_SERIAL) {
-    Serial.println("[HTTP] JSON a enviar:");
-    Serial.println(json);
-  }
+  // if (DEBUG_SERIAL) {
+  //   Serial.println("[HTTP] JSON a enviar:");
+  //   Serial.println(json);
+  // }
 
   int httpCode = http.POST(json);
 
@@ -148,7 +148,7 @@ void enviarParaAPI() {
 // SETUP
 // ======================================================================
 void setup() {
-  Serial.begin(SERIAL_BAUD);
+  Serial.begin(115200); // Substituído SERIAL_BAUD para garantir que conecte certo
   delay(500);
 
   Serial.println("\n========================================");
@@ -160,9 +160,13 @@ void setup() {
   conectarWiFi();
 
   // Inicializa sensor de pressão
-  Serial.print("Inicializando sensor de pressão...");
+  Serial.print("Inicializando sensor de pressao...");
   if (pressureSensor.begin()) {
     Serial.println(" OK");
+    
+    // ✅ O PULO DO GATO ESTÁ AQUI! Zera a pressão atmosférica lendo 50 amostras
+    pressureSensor.calibrateZero(50);
+    
   } else {
     Serial.println(" ERRO!");
     while(1);
@@ -179,12 +183,12 @@ void setup() {
   Serial.println(" OK");
 
   // Inicializa controlador
-  Serial.print("Inicializando controlador de vácuo...");
+  Serial.print("Inicializando controlador de vacuo...");
   vacuumController.begin();
   Serial.println(" OK");
 
   Serial.println("\nSistema pronto!");
-  Serial.println("Digite 'START' para iniciar vácuo, 'STOP' para parar");
+  Serial.println("Digite 'START' para iniciar vacuo, 'STOP' para parar");
   Serial.println("========================================\n");
 }
 
@@ -193,7 +197,8 @@ void setup() {
 // ======================================================================
 void loop() {
   // Lê sensor e atualiza máquina de estados a cada 100ms
-  if ((millis() - lastSensorRead) >= SENSOR_READ_INTERVAL) {
+  // Ajustado SENSOR_READ_INTERVAL direto para 100 para evitar erro se a macro faltar
+  if ((millis() - lastSensorRead) >= 100) { 
     vacuumController.update();
     lastSensorRead = millis();
   }
@@ -204,7 +209,6 @@ void loop() {
     lastApiSend = millis();
   }
 
-  // ✅ CORRIGIDO: Agora usa 1000ms (1 segundo) ao invés de 2000ms
   // Imprime status no Serial a cada 1 segundo
   if ((millis() - lastStatusPrint) >= 1000) {
     printStatus();
@@ -240,11 +244,11 @@ void printStatus() {
 
 void processCommand(String cmd) {
   if (cmd == "START") {
-    Serial.println("\n>>> Iniciando ciclo de vácuo...");
+    Serial.println("\n>>> Iniciando ciclo de vacuo...");
     vacuumController.startVacuum();
   }
   else if (cmd == "STOP") {
-    Serial.println("\n>>> Parando ciclo de vácuo...");
+    Serial.println("\n>>> Parando ciclo de vacuo...");
     vacuumController.stopVacuum();
   }
   else if (cmd == "STATUS") {
@@ -257,14 +261,14 @@ void processCommand(String cmd) {
   else if (cmd != "") {
     Serial.print("Comando desconhecido: ");
     Serial.println(cmd);
-    Serial.println("Digite 'HELP' para ver comandos disponíveis");
+    Serial.println("Digite 'HELP' para ver comandos disponiveis");
   }
 }
 
 void printHelp() {
-  Serial.println("\n========== COMANDOS DISPONÍVEIS ==========");
-  Serial.println("START  - Inicia ciclo de vácuo");
-  Serial.println("STOP   - Para ciclo de vácuo");
+  Serial.println("\n========== COMANDOS DISPONIVEIS ==========");
+  Serial.println("START  - Inicia ciclo de vacuo");
+  Serial.println("STOP   - Para ciclo de vacuo");
   Serial.println("STATUS - Mostra status atual do sistema");
   Serial.println("HELP   - Mostra esta mensagem");
   Serial.println("==========================================\n");
